@@ -336,7 +336,7 @@ FlashVSR+MAC-pinokio.git/
 
 ## 📄 License
 
-This launcher and web app are provided as-is. The FlashVSR+ model weights are
+This launcher and web app are provided under MIT license. The FlashVSR+ model weights are
 distributed under their own terms (see the
 [Hugging Face repo](https://huggingface.co/ruchangyao/FlashVSR_plus)); the vpipe
 engine is [Apache-2.0](https://github.com/tgo-app-dev/vpipe/blob/main/THIRD_PARTY_LICENSES.md).
