@@ -1,0 +1,20 @@
+# Python virtual environment
+app/env/
+**/__pycache__/
+*.pyc
+
+
+# vpipe working dir — model weights (fetched lazily via the UI), model DB,
+# per-job pipeline files
+app/work/
+
+# Generated upscale outputs
+app/outputs/
+
+# Uploads
+app/uploads
+
+# Pinokio runtime logs
+logs/
+
+.DS_Store

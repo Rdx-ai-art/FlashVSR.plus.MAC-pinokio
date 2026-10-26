@@ -1,0 +1,7 @@
+{
+  "title": "FlashVSR+ Video Upscaler",
+  "description": "FlashVSR+ one-step diffusion video super-resolution on Apple Silicon, powered by the vpipe engine (Metal). Choose Turbo (speed, hybrid attention) or Base (quality) variants, upscale any video to 1080p/4K targets with color-preserving restoration, and compare before/after with a slider. Video runs as background jobs with live progress and a result library.",
+  "icon": "icon.png",
+  "platform": ["darwin"],
+  "arch": ["arm64"]
+}

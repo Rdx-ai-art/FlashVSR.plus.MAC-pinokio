@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FlashVSR+ Video Upscaler</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚡</text></svg>" />
+</head>
+<body>
+  <div id="app">
+    <!-- ============ Header ============ -->
+    <header class="hero">
+      <div class="hero-left">
+        <div class="hero-logo">⚡</div>
+        <div>
+          <h1>FlashVSR+ <span class="accent">Video Upscaler</span></h1>
+          <p class="tagline">One-step diffusion video super-resolution on Apple Silicon — powered by the vpipe engine (Metal)</p>
+        </div>
+      </div>
+      <div class="hero-right" id="sys-info">
+        <span class="badge" id="badge-vpipe">vpipe: checking…</span>
+        <span class="badge" id="badge-sys"></span>
+      </div>
+    </header>
+
+    <main class="layout">
+      <!-- ============ Left panel ============ -->
+      <aside class="panel left">
+        <!-- Model -->
+        <section class="card">
+          <h2><span class="dot"></span>Model</h2>
+          <div class="seg" id="variant-seg">
+            <button data-v="turbo" class="on">Turbo</button>
+            <button data-v="base">Base</button>
+          </div>
+          <p class="hint" id="variant-desc"></p>
+          <div id="model-files" class="model-files"></div>
+          <div class="row gap">
+            <button class="btn primary" id="btn-fetch">Fetch model</button>
+          </div>
+          <div class="progress-wrap" id="fetch-progress" hidden>
+            <div class="bar"><div class="fill" id="fetch-fill"></div></div>
+            <div class="row between">
+              <span class="hint" id="fetch-status">0%</span>
+              <button class="btn ghost sm" id="btn-fetch-cancel">Cancel</button>
+            </div>
+          </div>
+        </section>
+
+        <!-- Input -->
+        <section class="card">
+          <h2><span class="dot"></span>Input Video</h2>
+          <div class="dropzone" id="dz-video">
+            <div class="dz-icon">🎞️</div>
+            <p>Drop a video here, or <label class="link" for="file-video">browse</label></p>
+            <p class="hint">mp4 · mov · mkv · webm</p>
+            <input type="file" id="file-video" accept="video/*,.mkv" hidden />
+          </div>
+          <div id="video-meta" class="meta" hidden></div>
+        </section>
+
+        <!-- Settings -->
+        <section class="card">
+          <h2><span class="dot"></span>Settings</h2>
+
+          <label class="lbl">Output resolution</label>
+          <div class="seg" id="res-mode">
+            <button data-mode="factor" class="on">Scale ×</button>
+            <button data-mode="target">Shortest side</button>
+          </div>
+          <div class="row gap" id="res-factor-row" style="margin-top:12px">
+            <input type="range" id="res-scale" class="res-range" min="1" max="4" step="0.25" value="2" />
+            <em id="res-scale-val" class="hint" style="width:40px;text-align:right">2.0×</em>
+          </div>
+          <div class="row gap" id="res-target-row" style="margin-top:12px;display:none">
+            <input type="range" id="res-target" class="res-range" min="480" max="4320" step="16" value="1080" />
+            <input type="number" id="res-target-num" class="in" min="64" max="16384" step="16" value="1080" />
+          </div>
+          <div id="res-estimate" class="meta" hidden></div>
+          <div class="hint" style="margin-top:8px">Scale keeps the source aspect — the safe default, normally no crop. Use shortest side only for an exact output size; an off-grid target trims/crops a little to keep the ratio.</div>
+
+          <label class="lbl">Output FPS</label>
+          <div class="chips" id="fps-chips">
+            <button data-fps="auto" class="on">Source</button>
+            <button data-fps="16">16</button>
+            <button data-fps="24">24</button>
+            <button data-fps="25">25</button>
+            <button data-fps="30">30</button>
+            <button data-fps="60">60</button>
+          </div>
+
+          <label class="lbl">Color fix</label>
+          <div class="chips" id="colorfix-chips">
+            <button data-cf="wavelet" class="on">Wavelet</button>
+            <button data-cf="adaIn">AdaIN</button>
+            <button data-cf="none">Off</button>
+          </div>
+
+          <label class="lbl">Decoder <span class="hint">(Tiny faults on some GPUs → try Full VAE)</span></label>
+          <div class="chips" id="decoder-chips">
+            <button data-dec="tiny" class="on">Tiny (fast)</button>
+            <button data-dec="vae">Full VAE</button>
+          </div>
+
+          <label class="lbl">Temporal compression <span class="hint">(4× fastest · 2×/1× keep more motion detail, slower)</span></label>
+          <div class="chips" id="tcomp-chips">
+            <button data-tc="4" class="on">4×</button>
+            <button data-tc="2">2×</button>
+            <button data-tc="1">1×</button>
+          </div>
+
+          <label class="lbl">Seed</label>
+          <div class="row gap" style="gap:10px">
+            <input type="number" id="in-seed" class="in seed" value="42" />
+            <label class="chk" style="margin:0" title="Use a fresh random seed on every run">
+              <input type="checkbox" id="in-random-seed" /> Random
+            </label>
+          </div>
+          <label class="chk">
+            <input type="checkbox" id="in-audio" checked />
+            Keep source audio
+          </label>
+        </section>
+      </aside>
+
+      <!-- ============ Right panel ============ -->
+      <section class="panel right">
+        <!-- Action — sits at the top (parallel to the Model block, right under
+             the logo) so clicking it keeps the eye on the ⚡ flash animation. -->
+        <section class="card action-bar">
+          <button class="btn primary big" id="btn-upscale">⚡ Upscale Video</button>
+          <button class="btn danger big" id="btn-cancel" hidden>Cancel</button>
+          <p class="hint center" id="upscale-note">Pick a model + video + settings below, then hit upscale.</p>
+        </section>
+
+        <!-- Job status -->
+        <div class="jobbar" id="jobbar" hidden>
+          <div class="row between">
+            <span class="job-phase" id="job-phase">Working…</span>
+            <span class="job-pct" id="job-pct">0%</span>
+          </div>
+          <div class="bar lg"><div class="fill" id="job-fill"></div></div>
+          <p class="job-error" id="job-error" hidden></p>
+          <details class="logbox">
+            <summary>Log</summary>
+            <pre id="job-log"></pre>
+          </details>
+        </div>
+
+        <!-- Tabs -->
+        <div class="tabs">
+          <button class="tab on" data-tab="result">Result</button>
+          <button class="tab" data-tab="compare">Compare</button>
+          <button class="tab" data-tab="library">Library</button>
+          <span class="tabs-right">
+            <button class="btn ghost sm" id="btn-refresh-lib" title="Refresh library">⟳</button>
+            <button class="btn ghost sm" id="btn-clear-lib" title="Clear library">🗑 Clear</button>
+          </span>
+        </div>
+
+        <!-- Result -->
+        <div class="tabpane on" id="pane-result">
+          <p class="hint zoom-hint">Controls: zoom = scroll · pan = drag · full screen = double-click</p>
+          <div class="result-stage" id="result-stage">
+            <div class="zoom-clip" id="result-zoom-clip">
+              <div class="zoom-clip-inner" id="result-zoom">
+                <video id="result-video" controls playsinline></video>
+              </div>
+            </div>
+            <div class="placeholder" id="result-placeholder">
+              <div class="ph-icon">🎬</div>
+              <p>Your upscaled video will appear here.</p>
+            </div>
+            <div class="zoom-bar">
+              <span class="zoom-label" id="res-zoom-level">100%</span>
+              <button class="btn ghost sm" id="res-zoom-reset" title="Reset zoom (or double-click the video)">↺</button>
+            </div>
+          </div>
+          <div class="row gap center" id="result-actions" hidden>
+            <a class="btn primary" id="result-download" download>⬇ Download</a>
+            <span class="hint" id="result-info"></span>
+          </div>
+        </div>
+
+        <!-- Compare -->
+        <div class="tabpane" id="pane-compare">
+          <p class="hint zoom-hint">Controls: zoom = scroll · pan = drag · reset = double-click · drag the bar / divider line to compare</p>
+          <div class="compare-stage" id="compare-stage">
+            <div class="compare-placeholder" id="compare-placeholder">
+              <p>Run an upscale to compare before / after side by side.</p>
+            </div>
+            <div class="cmp-zoom-clip" id="cmp-zoom-clip">
+              <div class="cmp-zoom" id="cmp-zoom">
+                <video id="cmp-after" class="cmp-video after" muted playsinline></video>
+                <video id="cmp-before" class="cmp-video before" muted playsinline></video>
+                <div class="cmp-divider" id="cmp-divider"><span class="cmp-knob" id="cmp-knob">⟺</span></div>
+              </div>
+            </div>
+            <input type="range" id="cmp-slider" min="0" max="100" value="50" class="cmp-range" />
+            <div class="cmp-labels">
+              <span>Original</span><span>FlashVSR+</span>
+            </div>
+            <div class="zoom-bar">
+              <span class="zoom-label" id="cmp-zoom-level">100%</span>
+              <button class="btn ghost sm" id="cmp-zoom-reset" title="Reset zoom (or double-click the video)">↺</button>
+            </div>
+          </div>
+          <div class="row gap center" id="cmp-actions" hidden>
+            <button class="btn primary" id="cmp-play">▶ Play</button>
+            <button class="btn ghost" id="cmp-reset">Reset</button>
+          </div>
+          <div class="cmp-seekrow" id="cmp-seekrow" hidden>
+            <input type="range" id="cmp-seek" class="cmp-seek" min="0" max="1000" value="0" step="1" />
+            <span class="cmp-time" id="cmp-time">0:00 / 0:00</span>
+          </div>
+        </div>
+
+        <!-- Library -->
+        <div class="tabpane" id="pane-library">
+          <div class="row between" style="margin-bottom: 10px;">
+            <span class="hint" id="lib-total-size"></span>
+          </div>
+          <div class="lib-grid" id="lib-grid"></div>
+          <div class="placeholder" id="lib-empty" hidden>
+            <div class="ph-icon">🗂️</div>
+            <p>No outputs yet. Finished upscalings land here automatically.</p>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+  <script src="app.js"></script>
+</body>
+</html>
