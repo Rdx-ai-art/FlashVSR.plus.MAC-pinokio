@@ -89,7 +89,7 @@ isolated venv managed by `uv`.
 ## 📦 Installation (One-Click)
 
 1. **Download Pinokio:** [pinokio.computer](https://pinokio.computer)
-2. **Copy this Repository URL:** `https://github.com/Rdx-ai-art/FlashVSR+MAC-pinokio.git`
+2. **Copy this Repository URL:** `https://github.com/Rdx-ai-art/FlashVSR.plus.MAC-pinokio.git`
 3. **Paste into Pinokio:** Discover > Download from URL > paste and select Download.
 
 		> OR search directly inside pinokio's app section for this app, Select install.
@@ -312,7 +312,7 @@ curl -X POST http://127.0.0.1:7860/api/outputs/<JOB_ID>/delete
 ## 📁 Project structure
 
 ```
-FlashVSR+MAC-pinokio.git/
+FlashVSR.plus.MAC-pinokio.git/
 ├── app/
 │   ├── app.py              # FastAPI backend — job runner, vpipe subprocess + parsing
 │   ├── requirements.txt
