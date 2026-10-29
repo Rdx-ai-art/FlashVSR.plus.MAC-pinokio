@@ -145,12 +145,7 @@ isolated venv managed by `uv`.
 
 ## 💡 How it works
 
-- `install.js` downloads the **prebuilt vpipe release** (v0.1.80, with-ffmpeg
-  build) as a DMG from the
-  [vpipe GitHub releases](https://github.com/tgo-app-dev/vpipe/releases), mounts
-  it, and copies `Vpipe Manager.app` into `vpipe/` — the engine CLI the web app
-  drives lives at `vpipe/Vpipe Manager.app/Contents/Helpers/vpipe`. No compiler,
-  no Homebrew, no system files.
+- `install.js` installs the dependencies from requirements using the prebuilt Vpipe engine pulled from my own repo(app/vpipe).
 - `start.js` launches the FastAPI app (`app/app.py`) in the `app/` venv and captures
   the printed URL to surface the **Open Web UI** tab.
 - The web app builds a **pipeline JSON** (the official FlashVSR+ reference pipeline,
